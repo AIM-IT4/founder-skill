@@ -2,6 +2,14 @@ name: Deploy Founder MCP to InstaBox
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'server.py'
+      - 'requirements.txt'
+      - 'package.json'
+      - 'scripts/deploy-instabox.mjs'
+      - '.github/workflows/deploy-instabox.yml'
 
 permissions:
   contents: read
