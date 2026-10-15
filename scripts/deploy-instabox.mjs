@@ -44,7 +44,7 @@ const port = await result.json();
 console.log('MCP endpoint: ' + port.url.replace(/\/$/, '') + '/mcp');
 console.log('Health check: ' + port.url.replace(/\/$/, '') + '/healthz');
 
-const rootUrl = port.url.replace(/\\/$/, '');
+const rootUrl = port.url.replace(/\/$/, '');
 let healthy = false;
 for (let attempt = 0; attempt < 12; attempt++) {
   try {
