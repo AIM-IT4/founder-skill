@@ -53,7 +53,25 @@ await exec('git clone https://github.com/AIM-IT4/founder-skill.git ' + app + ' 2
 await exec('git -C ' + app + ' fetch origin main && git -C ' + app + ' checkout --detach ' + sha);
 await exec('git clone https://github.com/Jakeschincariol/founder-skill.git ' + original + ' 2>/dev/null || true');
 await exec('git -C ' + original + ' fetch origin main && git -C ' + original + ' checkout --detach fd9385b0cfe1b96bebce3898fbd506d73eff5a9d');
-await exec('cd ' + app + ' && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt');
+const setupPython = [
+  'set -eu',
+  'if ! python3 -m venv ' + app + '/.venv 2>/dev/null; then',
+  '  echo "Python venv support absent; installing the matching OS package"',
+  '  PACKAGE=$(python3 -c "import sys; print(f\u0027python{sys.version_info.major}.{sys.version_info.minor}-venv\u0027)")',
+  '  if ! command -v apt-get >/dev/null 2>&1; then echo "apt-get unavailable"; exit 1; fi',
+  '  if [ "$(id -u)" -eq 0 ]; then',
+  '    apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y "$PACKAGE"',
+  '  elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then',
+  '    sudo -n apt-get update -qq && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y "$PACKAGE"',
+  '  else',
+  '    echo "Neither root nor passwordless sudo available to install $PACKAGE"; exit 1',
+  '  fi',
+  '  rm -rf ' + app + '/.venv',
+  '  python3 -m venv ' + app + '/.venv',
+  'fi',
+  app + '/.venv/bin/python -m pip install --disable-pip-version-check -r ' + app + '/requirements.txt',
+].join('\\n');
+await exec(setupPython);
 await vm.files.write(app + '/.env', 'FOUNDER_MCP_TOKEN=' + accessToken + '\nFOUNDER_SKILLS_ROOT=' + original + '/skills\n');
 await exec('chmod 600 ' + app + '/.env');
 await vm.files.write(app + '/start.sh', '#!/bin/sh\nset -a\n. ' + app + '/.env\nset +a\ncd ' + app + '\nexec .venv/bin/uvicorn server:app --host 0.0.0.0 --port 8000\n');
