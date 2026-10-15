@@ -70,7 +70,7 @@ const setupPython = [
   '  python3 -m venv ' + app + '/.venv',
   'fi',
   app + '/.venv/bin/python -m pip install --disable-pip-version-check -r ' + app + '/requirements.txt',
-].join('\\n');
+].join('\n');
 await exec(setupPython);
 await vm.files.write(app + '/.env', 'FOUNDER_MCP_TOKEN=' + accessToken + '\nFOUNDER_SKILLS_ROOT=' + original + '/skills\n');
 await exec('chmod 600 ' + app + '/.env');
