@@ -1,0 +1,9 @@
+{
+  "name": "founder-skill-mcp-deployment",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@insforge/instabox-sdk": "0.2.0"
+  }
+}
