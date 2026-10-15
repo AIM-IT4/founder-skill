@@ -1,0 +1,33 @@
+name: Deploy Founder MCP to InstaBox
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: founder-skill-mcp-instabox
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy remote MCP server
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout deployment source
+        uses: actions/checkout@v4
+      - name: Check Python syntax
+        run: python3 -m py_compile server.py
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned InstaBox SDK
+        run: npm install --no-audit --no-fund
+      - name: Deploy to InstaBox
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API_KEY }}
+          FOUNDER_MCP_TOKEN: ${{ secrets.FOUNDER_MCP_TOKEN }}
+        run: node scripts/deploy-instabox.mjs
