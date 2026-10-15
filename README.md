@@ -24,7 +24,7 @@ The workflow stores the token in a restrictive machine-local `.env` file; it nev
 
 ## Availability
 
-InstaBox machines may idle-suspend by default. This workflow turns **auto-suspend off** and clears the time-based timeout, but InstaBox does not promise permanent uptime. The deployment attempts to launch the service with a restarting systemd unit where available, otherwise runs it as a background process; on systems without systemd, a full machine restart may require rerunning the workflow.
+InstaBox machines may idle-suspend by default. This workflow turns **auto-suspend off** and clears the time-based timeout, but InstaBox does not promise permanent uptime. The deployment runs the service as a background process. A full machine restart may require rerunning the workflow. For production use, add a service manager (for example a systemd unit) and uptime monitoring.
 
 ## Local development
 
