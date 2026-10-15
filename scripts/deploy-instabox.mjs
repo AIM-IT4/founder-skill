@@ -43,3 +43,23 @@ if (!result.ok) throw Error('Port publish failed: ' + result.status);
 const port = await result.json();
 console.log('MCP endpoint: ' + port.url.replace(/\/$/, '') + '/mcp');
 console.log('Health check: ' + port.url.replace(/\/$/, '') + '/healthz');
+
+const rootUrl = port.url.replace(/\\/$/, '');
+let healthy = false;
+for (let attempt = 0; attempt < 12; attempt++) {
+  try {
+    const response = await fetch(rootUrl + '/healthz', {signal: AbortSignal.timeout(8000)});
+    const health = await response.json();
+    if (response.ok && health.status === 'ok' && health.skills === 11) {
+      const unauthenticated = await fetch(rootUrl + '/mcp', {signal: AbortSignal.timeout(8000)});
+      if (unauthenticated.status !== 401) throw Error('MCP authentication guard not active');
+      healthy = true;
+      break;
+    }
+  } catch (error) {
+    console.log('Waiting for MCP startup: ' + String(error.message || error));
+  }
+  await new Promise(resolve => setTimeout(resolve, 5000));
+}
+if (!healthy) throw Error('MCP health or authentication verification failed');
+console.log('Health and access-control checks passed');
