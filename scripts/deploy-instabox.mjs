@@ -10,9 +10,35 @@ if (!/^[a-f0-9]{40}$/.test(sha)) throw Error('Expected valid GitHub commit SHA')
 
 const matches = await Sandbox.list({ metadata: { app: name } });
 const existing = matches.find(x => x.name === name);
-const vm = existing
-  ? await Sandbox.connect(existing.sandboxId)
-  : await Sandbox.create('universal', { name, metadata: { app: name }, autoSuspendMs: 0, vault: false });
+let vm;
+if (existing) {
+  console.log('Reusing existing InstaBox machine:', existing.sandboxId);
+  vm = await Sandbox.connect(existing.sandboxId);
+} else {
+  const maxAttempts = 9;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log('Creating InstaBox machine, attempt ' + attempt + '/' + maxAttempts);
+      vm = await Sandbox.create('universal', {
+        name,
+        metadata: { app: name },
+        autoSuspendMs: 0,
+        vault: false,
+      });
+      break;
+    } catch (error) {
+      const isCapacity = error?.code === 'no_capacity';
+      if (!isCapacity || attempt === maxAttempts) {
+        console.error('Machine creation failed: ' + (error?.code || 'unknown'));
+        throw error;
+      }
+      const seconds = Math.min(15 * attempt, 75);
+      console.warn('InstaBox has no available 4-vCPU/8-GiB host. Retrying in ' + seconds + 's');
+      await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    }
+  }
+}
+console.log('InstaBox machine ID:', vm.sandboxId);
 await vm.setAutoSuspend(0);
 await vm.setTimeout(0);
 const app = '/data/home/founder-skill-mcp';
