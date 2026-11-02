@@ -1,0 +1,29 @@
+name: Prepare Umami recovery on existing InstaBox
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/prepare-instabox-umami.yml'
+      - 'scripts/prepare-instabox-umami.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: founder-skill-mcp-instabox
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Validate preparation script
+        run: node --check scripts/prepare-instabox-umami.mjs
+      - name: Prepare isolated PostgreSQL and stage matching Umami image
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API_KEY }}
+        run: node scripts/prepare-instabox-umami.mjs
