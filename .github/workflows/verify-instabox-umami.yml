@@ -1,0 +1,28 @@
+name: Verify InstaBox Umami without changing database
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-instabox-umami.yml'
+      - 'scripts/verify-instabox-umami.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: founder-skill-mcp-instabox
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: node --check scripts/verify-instabox-umami.mjs
+      - name: Test live Umami API, record an identifiable synthetic event, verify PostgreSQL
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API_KEY }}
+        run: node scripts/verify-instabox-umami.mjs
