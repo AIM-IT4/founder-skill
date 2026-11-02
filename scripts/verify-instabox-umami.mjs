@@ -26,8 +26,8 @@ status,site,_=api('/api/websites/'+wid,token=auth['token'])
 assert status==200 and site.get('id')==wid
 print('ADMIN_AUTH_OK WEBSITE_OK',site.get('domain'))
 tables=query("SELECT table_name FROM information_schema.columns WHERE column_name='event_name' AND table_schema='public'").splitlines()
-assert len(tables)==1 and tables[0].replace('_','').isalnum(),tables
-def count(): return int(query("SELECT count(*) FROM " + tables[0] + " WHERE event_name = '" + event + "'"))
+assert 'website_event' in tables,tables
+def count(): return int(query("SELECT count(*) FROM " + 'website_event' + " WHERE event_name = '" + event + "'"))
 before=count()
 payload={'type':'event','payload':{'website':wid,'hostname':'desk2quant.com','url':'https://desk2quant.com/umami-verification','screen':'1920x1080','language':'en-US','title':'Desk2Quant diagnostic','referrer':'','name':event}}
 status,_,headers=api('/api/send',payload)
