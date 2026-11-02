@@ -51,7 +51,7 @@ jobs:
               signal: AbortSignal.timeout(30000)
             });
             const info = await probe.json();
-            console.log('VM state:', JSON.stringify({ status: probe.status, id: info.id, state: info.state, name: info.name, errorCode: info.error?.code || info.code }));
+            console.log('VM state:', JSON.stringify({ status: probe.status, id: info.id, state: info.state, name: info.name, free: info.free, autoSuspendAfterSeconds: info.autoSuspendAfterSeconds, maxRunMinutes: info.maxRunMinutes, archiveAt: info.archiveAt, deleteAt: info.deleteAt, errorCode: info.error?.code || info.code }));
             if (!probe.ok) throw new Error('InstaBox API returned HTTP ' + probe.status);
             const vm = await Sandbox.connect(machineId, { fetch: apiFetch, requestTimeoutMs: 30000, operationTimeoutMs: 120000 });
             const command = [
