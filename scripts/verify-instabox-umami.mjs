@@ -13,7 +13,7 @@ python3 - <<'PY'
 import json,pathlib,urllib.request,urllib.error,subprocess,time
 base='http://127.0.0.1:3000'; wid='1a30fbff-9eea-4902-840d-0c5a2d63366e'; event='instabox_verification_20261102'
 def api(path,data=None,token=None):
- headers={'Content-Type':'application/json','Origin':'https://desk2quant.com'}
+ headers={'Content-Type':'application/json','Origin':'https://desk2quant.com','User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0.0.0 Safari/537.36'}
  if token:headers['Authorization']='Bearer '+token
  req=urllib.request.Request(base+path,headers=headers,data=json.dumps(data).encode() if data is not None else None)
  with urllib.request.urlopen(req,timeout=25) as resp:return resp.status,json.load(resp),resp.headers
