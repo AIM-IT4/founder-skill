@@ -1,0 +1,76 @@
+name: Inspect InstaBox for Umami recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-instabox-umami.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: founder-skill-mcp-instabox
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing pinned SDK
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Inspect existing VM without changing application or database data
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API_KEY }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { Sandbox } from '@insforge/instabox-sdk';
+          const machineId = 'm_agqt3fp3ttmzygaezcrv3nuwmq';
+          const apiKey = process.env.INSTABOX_API_KEY;
+          if (!apiKey) throw new Error('INSTABOX_API_KEY secret is unavailable');
+          try {
+            const vm = await Sandbox.connect(machineId);
+            const command = [
+              "python3 - <<'PY'",
+              "import json, os, pathlib, shutil, subprocess",
+              "def run(args):",
+              "    try:",
+              "        p = subprocess.run(args, capture_output=True, text=True, timeout=15)",
+              "        return {'exit_code': p.returncode, 'output': p.stdout.strip()[:3000]}",
+              "    except Exception as e:",
+              "        return {'error': type(e).__name__}",
+              "disk = shutil.disk_usage('/data')",
+              "mem = pathlib.Path('/proc/meminfo').read_text().splitlines()",
+              "roots = ['/data/umami', '/data/home/umami', '/data/home/umami-analytics', '/data/home/founder-skill-mcp']",
+              "result = {",
+              "    'cpu_count': os.cpu_count(),",
+              "    'memory': [x for x in mem if x.startswith(('MemTotal:', 'MemAvailable:'))],",
+              "    'data_disk_gib': {k: round(v / 1024**3, 2) for k, v in zip(['total', 'used', 'free'], disk)},",
+              "    'persistent_mount': run(['findmnt', '-T', '/data', '-o', 'TARGET,FSTYPE,OPTIONS']),",
+              "    'init': pathlib.Path('/proc/1/comm').read_text().strip(),",
+              "    'uid': os.getuid(),",
+              "    'docker_version': run(['docker', '--version']),",
+              "    'docker_compose': run(['docker', 'compose', 'version']),",
+              "    'docker_services': run(['docker', 'ps', '--format', '{{.Names}} {{.Image}} {{.Status}}']),",
+              "    'ports': run(['ss', '-lnt']),",
+              "    'known_paths': {x: os.path.exists(x) for x in roots},",
+              "    'founder_health': run(['curl', '-fsS', '--max-time', '10', 'http://127.0.0.1:8000/healthz']),",
+              "}",
+              "print(json.dumps(result, indent=2))",
+              "PY"
+            ].join('\n');
+            const result = await vm.commands.run(command, { timeoutMs: 120000 });
+            if (result.exitCode !== 0) throw new Error('VM inspection command failed');
+            console.log('Authenticated to existing InstaBox VM:', machineId);
+            console.log(String(result.stdout).split(apiKey).join('[REDACTED]'));
+          } catch (error) {
+            console.error('Inspection failed:', String(error?.code || error?.name || 'unknown'));
+            process.exitCode = 1;
+          }
+          NODE
