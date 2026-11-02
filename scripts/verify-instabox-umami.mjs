@@ -39,6 +39,12 @@ for i in range(10):
  time.sleep(1)
 else: raise RuntimeError('Event not saved to PostgreSQL')
 print('POSTGRES_PERSISTENCE_OK',before,'TO',after)
+cols=query("SELECT column_name FROM information_schema.columns WHERE table_name='website_event' AND table_schema='public'").splitlines()
+print('WEBSITE_EVENT_COLUMNS',','.join(cols))
+if 'url_query' in cols:
+ browser_hits=int(query("SELECT count(*) FROM website_event WHERE url_query LIKE '%d2q_umami_probe=live_20261102_105%'"))
+ print('LIVE_BROWSER_PAGEVIEW_MATCHES',browser_hits)
+else: print('LIVE_BROWSER_PAGEVIEW_MATCHES','url_query_unavailable')
 for url,label in [('https://3000-agqt3fp3ttmzygaezcrv3nuwmq.instabox.tech/api/heartbeat','PUBLIC_HEARTBEAT'),('https://3000-agqt3fp3ttmzygaezcrv3nuwmq.instabox.tech/script.js','PUBLIC_SCRIPT'),('https://desk2quant.com/umami-analytics.js','DESK2QUANT_TRACKER')]:
  try:
   with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'UmamiCheck/1.0'}),timeout=20) as resp:
