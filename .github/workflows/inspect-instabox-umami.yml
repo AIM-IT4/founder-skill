@@ -87,6 +87,9 @@ jobs:
             if (result.exitCode !== 0) throw new Error('VM inspection command failed');
             console.log('Authenticated to existing InstaBox VM:', machineId);
             console.log(String(result.stdout).split(apiKey).join('[REDACTED]'));
+            const eventCheck = await vm.commands.run("cd /data/home/umami\ndocker compose exec -T db psql -U umami -d umami -v ON_ERROR_STOP=1 <<'SQL'\nSELECT format('SELECT %L AS source_table, event_name, count(*) AS stored_count FROM %I WHERE event_name LIKE %L GROUP BY event_name', table_name, table_name, 'manual_verification_%') FROM information_schema.columns WHERE column_name='event_name' AND table_schema='public'\n\\gexec\nSQL", { timeoutMs: 60000 });
+            if (eventCheck.exitCode !== 0) throw new Error('Event verification failed');
+            console.log(String(eventCheck.stdout));
           } catch (error) {
             console.error('Inspection failed:', String(error?.code || error?.name || 'unknown'), String(error?.message || '').split(apiKey).join('[REDACTED]').slice(0, 400));
             process.exitCode = 1;
