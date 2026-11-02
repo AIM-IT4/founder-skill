@@ -21,5 +21,8 @@ try {
   }
 } catch (error) {
   console.error('Staging failed:', String(error?.code || error?.name || 'unknown'));
+  for (const output of [error?.stdout, error?.stderr]) {
+    if (output) console.error(String(output).split(key).join('[REDACTED]').slice(-8000));
+  }
   process.exitCode = 1;
 }
